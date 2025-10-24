@@ -31,14 +31,14 @@
   "include": [
     "src/**/*",
     "android/**/*",
-    "ios/**/*"
+    "ios/**/*",
+    "tests/**/*"
   ],
   "exclude": [
     "node_modules",
     "android/build",
     "ios/build",
     "dist",
-    "build",
-    "src/**/__tests__"
+    "build"
   ]
 }

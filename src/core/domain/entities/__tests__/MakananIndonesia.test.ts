@@ -12,6 +12,65 @@ import {
   TingkatKepopuleran
 } from '../MakananIndonesia';
 
+// Helper function to create valid MakananIndonesia instances for testing
+function createTestMakanan(overrides: Partial<{
+  id: string;
+  nama: string;
+  kategori: KategoriMakanan;
+  halalCertified: boolean;
+  isVegetarian: boolean;
+  isVegan: boolean;
+  alergen: string[];
+  informasiBahan: any[];
+  nutrisiPer100g: Nutrisi;
+}> = {}): MakananIndonesia {
+  const defaultNutrisi: Nutrisi = {
+    kalori: 200,
+    protein: 15,
+    karbohidrat: 25,
+    lemak: 8,
+    serat: 3,
+    garam: 400,
+    gula: 5,
+    vitaminA: 1000,
+    vitaminC: 20,
+    kalsium: 100,
+    zatBesi: 3,
+    folat: 25
+  };
+
+  return new MakananIndonesia(
+    overrides.id || 'test-001',
+    overrides.nama || 'Test Food',
+    [],
+    overrides.kategori || KategoriMakanan.LAUK_PAUK,
+    [],
+    { provinsi: ['Jawa'], kota: [], musiman: [] },
+    overrides.nutrisiPer100g || defaultNutrisi,
+    [{
+      id: '1',
+      nama: '1 porsi',
+      beratGram: 100,
+      deskripsi: 'Satu porsi standar'
+    }],
+    ['https://example.com/image.jpg'],
+    overrides.informasiBahan || [{
+      nama: 'Test Ingredient',
+      persentase: 100,
+      kategori: 'vegetable'
+    }],
+    [CaraMasak.GORENG],
+    overrides.halalCertified !== undefined ? overrides.halalCertified : true,
+    overrides.isVegetarian !== undefined ? overrides.isVegetarian : false,
+    overrides.isVegan !== undefined ? overrides.isVegan : false,
+    overrides.alergen !== undefined ? overrides.alergen : [],
+    TingkatKepopuleran.CUKUP_POPULER,
+    'seluruh_indonesia',
+    false,
+    { minimal: 10000, maksimal: 15000, mataUang: 360 }
+  );
+}
+
 describe('MakananIndonesia Entity', () => {
   describe('Constructor', () => {
     it('should create makanan with valid data', () => {
@@ -238,11 +297,32 @@ describe('MakananIndonesia Entity', () => {
     beforeEach(() => {
       makanan = new MakananIndonesia(
         'test-001',
-        'Test Food',
+        'Ketupat Opor',
         [],
-        KategoriMakanan.LAUKN_PAUK,
+        KategoriMakanan.LAUK_PAUK,
         [],
         { provinsi: ['Jawa'] },
+        {
+          kalori: 200,
+          protein: 20,
+          karbohidrat: 10,
+          lemak: 8,
+          serat: 2,
+          garam: 500,
+          gula: 3,
+          vitaminA: 1000,
+          vitaminC: 10,
+          kalsium: 50,
+          zatBesi: 2,
+          folat: 20
+        },
+        [{
+          id: '1',
+          nama: '1 porsi',
+          beratGram: 100,
+          deskripsi: 'Satu porsi standar'
+        }],
+        ['https://example.com/image.jpg'],
         [{
           nama: 'Ayam',
           persentase: 100,
@@ -255,14 +335,18 @@ describe('MakananIndonesia Entity', () => {
         TingkatKepopuleran.CUKUP_POPULER,
         'seluruh_indonesia',
         true,
-        { minimal: 10000, maksimal: 15000, mataUang: 12000 }
+        { minimal: 10000, maksimal: 15000, mataUang: 360 }
       );
     });
 
     it('should check allergen correctly', () => {
-      expect(makanan.isSehatUntukPengguna(['telur'])).toBe(false);
-      expect(makanan.isSehatUntukPengguna(['kacang'])).toBe(false);
-      expect(makanan.isSehatUntukPengguna(['sayur'])).toBe(true);
+      const makananAlergi = createTestMakanan({
+        alergen: ['kacang', 'susu']
+      });
+
+      expect(makananAlergi.isSehatUntukPengguna(['kacang'])).toBe(false);
+      expect(makananAlergi.isSehatUntukPengguna(['susu'])).toBe(false);
+      expect(makananAlergi.isSehatUntukPengguna(['sayur'])).toBe(true);
     });
 
     it('should check regional availability', () => {
@@ -304,7 +388,7 @@ describe('MakananIndonesia Entity', () => {
         'test-003',
         'Rendang Padang',
         [],
-        KategoriMakanan.LAUKN_PAUK,
+        KategoriMakanan.LAUK_PAUK,
         ['Sumatera Barat'],
         [],
         [{ nama: 'Daging', persentase: 100, kategori: 'protein_hewani' }],
@@ -344,7 +428,7 @@ describe('MakananIndonesia Entity', () => {
         'test-005',
         'Babi Kecap',
         [],
-        KategoriMakanan.LAUKN_PAUK,
+        KategoriMakanan.LAUK_PAUK,
         ['Bali'],
         [],
         [],
@@ -529,7 +613,7 @@ describe('MakananIndonesia Entity', () => {
         'non-veg-001',
         'Rendang Sapi',
         [],
-        KategoriMakanan.LAUKN_PAUK,
+        KategoriMakanan.LAUK_PAUK,
         ['Sumatera'],
         [],
         [],

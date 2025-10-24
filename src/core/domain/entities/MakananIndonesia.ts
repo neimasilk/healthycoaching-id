@@ -73,6 +73,10 @@ export interface KetersediaanRegional {
 }
 
 export class MakananIndonesia {
+  public readonly createdAt: Date;
+  public updatedAt: Date;
+  public lastUpdated: Date;
+
   constructor(
     public readonly id: string,
     public nama: string,
@@ -97,10 +101,14 @@ export class MakananIndonesia {
       maksimal: number;
       mataUang: number;
     },
-    public lastUpdated: Date = new Date(),
-    public createdAt: Date = new Date(),
-    public updatedAt: Date = new Date()
-  ) {}
+    createdAt?: Date,
+    updatedAt?: Date
+  ) {
+    const now = new Date();
+    this.createdAt = createdAt || now;
+    this.updatedAt = updatedAt || now;
+    this.lastUpdated = updatedAt || now;
+  }
 
   // Business logic methods
   getNutrisiUntukPorsi(porsiIndex: number): Nutrisi {
