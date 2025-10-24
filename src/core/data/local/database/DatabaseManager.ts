@@ -26,7 +26,7 @@ export interface ConnectionPoolConfig {
 export interface QueryResult {
   insertId?: number;
   rowsAffected: number;
-  rows: any[];
+  rows: Record<string, unknown>[];
 }
 
 export interface DatabaseStats {

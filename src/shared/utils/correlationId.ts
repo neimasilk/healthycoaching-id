@@ -48,8 +48,8 @@ export function addCorrelationToError(error: Error, correlationId?: string): Err
  */
 export function createErrorContext(
   correlationId: string,
-  context: Record<string, any>
-): Record<string, any> {
+  context: Record<string, unknown>
+): Record<string, unknown> {
   return {
     correlationId,
     timestamp: new Date().toISOString(),

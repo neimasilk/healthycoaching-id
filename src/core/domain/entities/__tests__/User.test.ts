@@ -22,7 +22,7 @@ describe('User Entity', () => {
         tinggiBadan: 170,
         beratBadan: 70,
         aktivitasFisik: {
-          level: 'cukup' as AktivitasFisikLevel,
+          level: 'cukup',
           targetMenitPerMinggu: 150
         },
         golKesehatan: [],
@@ -52,8 +52,7 @@ describe('User Entity', () => {
             tinggi: 'cm' as const,
             suhu: 'celsius' as const,
             jarak: 'km' as const,
-            unit: 'km' as const
-          }
+                      }
         },
         alergi: ['seafood', 'kacang'],
         kondisiKesehatan: [],
@@ -99,7 +98,7 @@ describe('User Entity', () => {
       // Arrange
       const userProfile = createMockUserProfile();
       userProfile.tanggalLahir = new Date('1990-01-15'); // 34 years old as of 2024
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       // Act
       const age = user.getUmur();
@@ -112,7 +111,7 @@ describe('User Entity', () => {
       // Arrange
       const userProfile = createMockUserProfile();
       userProfile.tanggalLahir = new Date('2000-02-29'); // Leap year
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       // Act
       const today = new Date();
@@ -128,7 +127,7 @@ describe('User Entity', () => {
       const userProfile = createMockUserProfile();
       const today = new Date();
       userProfile.tanggalLahir = new Date(today.getFullYear() - 25, today.getMonth(), today.getDate());
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       // Act
       const age = user.getUmur();
@@ -144,7 +143,7 @@ describe('User Entity', () => {
       const userProfile = createMockUserProfile();
       userProfile.tinggiBadan = 170; // 1.7m
       userProfile.beratBadan = 65; // 65kg
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       // Act
       const bmi = user.getBMI();
@@ -159,7 +158,7 @@ describe('User Entity', () => {
       const userProfile = createMockUserProfile();
       userProfile.tinggiBadan = 0; // Invalid height
       userProfile.beratBadan = 70;
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       // Act & Assert
       expect(() => user.getBMI()).toThrow('Height must be greater than 0');
@@ -197,7 +196,7 @@ describe('User Entity', () => {
     it('should return true when target weight is set', () => {
       const userProfile = createMockUserProfile();
       userProfile.targetBerat = 65;
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       expect(user.hasTargetBerat()).toBe(true);
     });
@@ -205,7 +204,7 @@ describe('User Entity', () => {
     it('should return false when target weight is not set', () => {
       const userProfile = createMockUserProfile();
       userProfile.targetBerat = undefined;
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       expect(user.hasTargetBerat()).toBe(false);
     });
@@ -215,7 +214,7 @@ describe('User Entity', () => {
     it('should check if user needs halal food', () => {
       const userProfile = createMockUserProfile();
       userProfile.preferensi.preferensiDiet.halalOnly = true;
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       expect(user.needsHalalFood()).toBe(true);
     });
@@ -223,7 +222,7 @@ describe('User Entity', () => {
     it('should return alergen list', () => {
       const userProfile = createMockUserProfile();
       userProfile.alergi = ['udang', 'kacang', 'susu'];
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       expect(user.getAlergenList()).toEqual(['udang', 'kacang', 'susu']);
     });
@@ -231,7 +230,7 @@ describe('User Entity', () => {
     it('should check puasa preference', () => {
       const userProfile = createMockUserProfile();
       userProfile.preferensi.preferensiDiet.tipe = 'vegetarian';
-      const user = new User('user-123', 'test@example.com', userProfile);
+      const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
       expect(user.isPuasa()).toBe(false); // Vegetarian assumed not fasting
     });
@@ -355,8 +354,7 @@ function createMockUserProfile(): UserProfile {
         tinggi: 'cm',
         suhu: 'celsius',
         jarak: 'km',
-        unit: 'km'
-      }
+              }
     },
     alergi: ['seafood', 'kacang'],
     kondisiKesehatan: [],

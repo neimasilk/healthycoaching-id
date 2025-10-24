@@ -143,7 +143,7 @@ export class MigrationManager {
       `);
 
       if (result.rows.length > 0) {
-        return result.rows[0].version;
+        return String(result.rows[0].version);
       }
 
       return '0.0.0';
@@ -355,11 +355,11 @@ export class MigrationManager {
         ORDER BY version ASC
       `);
 
-      return result.rows.map(row => ({
-        version: row.version,
-        description: row.description,
+      return result.rows.map((row: Record<string, unknown>) => ({
+        version: String(row.version),
+        description: String(row.description),
         timestamp: new Date(),
-        executedAt: new Date(row.executed_at)
+        executedAt: new Date(String(row.executed_at))
       }));
 
     } catch (error) {

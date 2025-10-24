@@ -10,7 +10,7 @@ export abstract class BaseError extends Error {
   public readonly correlationId: string;
   public readonly timestamp: Date;
   public readonly errorCode: string;
-  public readonly context?: Record<string, any>;
+  public readonly context?: Record<string, unknown>;
   public readonly cause?: Error;
   public readonly isRetryable: boolean;
   public readonly severity: 'low' | 'medium' | 'high' | 'critical';
@@ -19,7 +19,7 @@ export abstract class BaseError extends Error {
     message: string,
     errorCode: string,
     correlationId?: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     cause?: Error,
     isRetryable: boolean = false,
     severity: 'low' | 'medium' | 'high' | 'critical' = 'medium'
@@ -149,7 +149,7 @@ export class BusinessLogicError extends BaseError {
     message: string,
     errorCode: string,
     correlationId?: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     isRetryable: boolean = false,
     severity: 'low' | 'medium' | 'high' | 'critical' = 'medium'
   ) {
