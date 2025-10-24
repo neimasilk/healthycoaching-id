@@ -4,7 +4,11 @@
  * Location: tests/setup.ts
  */
 
-import 'react-native-gesture-handler/jestSetup';
+try {
+  require('react-native-gesture-handler/jestSetup');
+} catch (error) {
+  // Gesture handler setup is optional in tests; ignore when module is absent.
+}
 
 // Mock react-native modules
 jest.mock('react-native-reanimated', () => {
@@ -44,47 +48,63 @@ jest.mock('react-native-permissions', () => ({
 }));
 
 // Mock react-native-firebase
-jest.mock('@react-native-firebase/app', () => ({
-  firebase: {
-    apps: [],
-  },
-}));
-
-jest.mock('@react-native-firebase/analytics', () => ({
-  default: () => ({
-    logEvent: jest.fn(),
-    logScreenView: jest.fn(),
-    setUserId: jest.fn(),
-    setUserProperty: jest.fn(),
+jest.mock(
+  '@react-native-firebase/app',
+  () => ({
+    firebase: {
+      apps: [],
+    },
   }),
-}));
+  { virtual: true }
+);
 
-jest.mock('@react-native-firebase/crashlytics', () => ({
-  default: () => ({
-    recordError: jest.fn(),
-    setUserId: jest.fn(),
-    log: jest.fn(),
-    setAttribute: jest.fn(),
+jest.mock(
+  '@react-native-firebase/analytics',
+  () => ({
+    default: () => ({
+      logEvent: jest.fn(),
+      logScreenView: jest.fn(),
+      setUserId: jest.fn(),
+      setUserProperty: jest.fn(),
+    }),
   }),
-}));
+  { virtual: true }
+);
 
-jest.mock('@react-native-firebase/performance', () => ({
-  default: () => ({
-    newTrace: jest.fn(() => ({
-      start: jest.fn(),
-      stop: jest.fn(),
-      putMetric: jest.fn(),
-    })),
-    newHttpMetric: jest.fn(() => ({
-      setHttpResponseCode: jest.fn(),
-      setRequestPayloadSize: jest.fn(),
-      setResponsePayloadSize: jest.fn(),
+jest.mock(
+  '@react-native-firebase/crashlytics',
+  () => ({
+    default: () => ({
+      recordError: jest.fn(),
+      setUserId: jest.fn(),
+      log: jest.fn(),
       setAttribute: jest.fn(),
-      start: jest.fn(),
-      stop: jest.fn(),
-    })),
+    }),
   }),
-}));
+  { virtual: true }
+);
+
+jest.mock(
+  '@react-native-firebase/performance',
+  () => ({
+    default: () => ({
+      newTrace: jest.fn(() => ({
+        start: jest.fn(),
+        stop: jest.fn(),
+        putMetric: jest.fn(),
+      })),
+      newHttpMetric: jest.fn(() => ({
+        setHttpResponseCode: jest.fn(),
+        setRequestPayloadSize: jest.fn(),
+        setResponsePayloadSize: jest.fn(),
+        setAttribute: jest.fn(),
+        start: jest.fn(),
+        stop: jest.fn(),
+      })),
+    }),
+  }),
+  { virtual: true }
+);
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -120,23 +140,22 @@ global.console = {
   error: jest.fn(),
 };
 
-// Mock Date.now for consistent test results
 const mockDate = new Date('2023-10-24T12:00:00.000Z');
-global.Date.now = jest.fn(() => mockDate.getTime());
-global.Date = jest.fn((...args) => {
-  if (args.length === 0) return mockDate;
-  return new (global.Date as any)(...args);
-}) as any;
-global.Date.UTC = jest.fn();
-global.Date.parse = jest.fn();
-global.Date.prototype = mockDate;
-
-// Setup global test utilities
-global.generateCorrelationId = () => 'HC-20231024120000-12345678';
-
-// Suppress React Native warnings in tests
 const originalWarn = console.warn;
+
 beforeAll(() => {
+  jest.useFakeTimers();
+  jest.setSystemTime(mockDate);
+  // Mock performance.now for timing tests
+  global.performance = {
+    now: jest.fn(() => Date.now()),
+    mark: jest.fn(),
+    measure: jest.fn(),
+    getEntriesByName: jest.fn(),
+    getEntriesByType: jest.fn(),
+    clearMarks: jest.fn(),
+    clearMeasures: jest.fn(),
+  } as any;
   console.warn = (...args: any[]) => {
     if (
       typeof args[0] === 'string' &&
@@ -152,6 +171,7 @@ beforeAll(() => {
 
 afterAll(() => {
   console.warn = originalWarn;
+  jest.useRealTimers();
 });
 
 // Global test utilities
@@ -165,6 +185,8 @@ export const mockAsyncStorage = () => ({
   multiSet: jest.fn(),
   multiRemove: jest.fn(),
 });
+
+(global as any).generateCorrelationId = () => 'HC-20231024120000-12345678';
 
 export const mockDatabase = () => ({
   executeSql: jest.fn(),

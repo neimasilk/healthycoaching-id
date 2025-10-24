@@ -4,7 +4,7 @@
  * Location: src/core/data/local/database/DatabaseManager.ts
  */
 
-import { openDatabase, SQLiteDatabase } from 'react-native-sqlite-storage';
+import { openDatabase, SQLiteDatabase, SQLiteTransaction, SQLiteResultSet } from 'react-native-sqlite-storage';
 import { BaseError } from '../../../../shared/errors/BaseError';
 import { generateCorrelationId } from '../../../../shared/utils/correlationId';
 
@@ -174,7 +174,7 @@ export class DatabaseManager {
     const startTime = Date.now();
 
     try {
-      if (!this.isInitialized || !this.db) {
+      if (!this.db) {
         throw new DatabaseNotInitializedError(
           'Database not initialized',
           correlationId
@@ -205,8 +205,10 @@ export class DatabaseManager {
 
         // Limit cache size
         if (this.queryCache.size > 100) {
-          const firstKey = this.queryCache.keys().next().value;
-          this.queryCache.delete(firstKey);
+          const iterator = this.queryCache.keys().next();
+          if (!iterator.done && typeof iterator.value === 'string') {
+            this.queryCache.delete(iterator.value);
+          }
         }
       }
 
@@ -249,9 +251,10 @@ export class DatabaseManager {
   ): Promise<QueryResult> {
     const correlationId = generateCorrelationId();
     const startTime = Date.now();
+    const isWarmupPhase = !this.isInitialized;
 
     try {
-      if (!this.isInitialized || !this.db) {
+      if (!this.db) {
         throw new DatabaseNotInitializedError(
           'Database not initialized',
           correlationId
@@ -265,16 +268,18 @@ export class DatabaseManager {
       // Invalidate cache for write operations
       this.clearCache();
 
-      // Update stats
-      const queryTime = Date.now() - startTime;
-      this.queryStats.totalQueries++;
-      this.queryStats.totalTime += queryTime;
+      if (!isWarmupPhase) {
+        // Update stats only after initialization completes
+        const queryTime = Date.now() - startTime;
+        this.queryStats.totalQueries++;
+        this.queryStats.totalTime += queryTime;
 
-      console.log(`[Database] Write query executed in ${queryTime}ms`, {
-        correlationId,
-        sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
-        rowsAffected: result.rowsAffected
-      });
+        console.log(`[Database] Write query executed in ${queryTime}ms`, {
+          correlationId,
+          sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
+          rowsAffected: result.rowsAffected
+        });
+      }
 
       return result;
 
@@ -307,19 +312,19 @@ export class DatabaseManager {
       connection.executeSql(
         sql,
         params,
-        (_, result) => {
+        (_tx: SQLiteTransaction, result: SQLiteResultSet) => {
           const rows: any[] = [];
           for (let i = 0; i < result.rows.length; i++) {
             rows.push(result.rows.item(i));
           }
 
           resolve({
-            insertId: result.insertId || undefined,
+            insertId: result.insertId ?? undefined,
             rowsAffected: result.rowsAffected,
             rows
           });
         },
-        (_, error) => {
+        (_tx: SQLiteTransaction, error: Error) => {
           reject(error);
           return false;
         }
@@ -337,7 +342,7 @@ export class DatabaseManager {
     const startTime = Date.now();
 
     try {
-      if (!this.isInitialized || !this.db) {
+      if (!this.db) {
         throw new DatabaseNotInitializedError(
           'Database not initialized',
           correlationId
@@ -347,26 +352,26 @@ export class DatabaseManager {
       console.log('[Database] Starting transaction', { correlationId });
 
       const result = await new Promise<T>((resolve, reject) => {
-        this.db!.transaction((tx) => {
+        this.db!.transaction((tx: SQLiteTransaction) => {
           const transaction: DatabaseTransaction = {
             execute: async (sql: string, params: any[] = []) => {
               return new Promise<QueryResult>((execResolve, execReject) => {
                 tx.executeSql(
                   sql,
                   params,
-                  (_, result) => {
+                  (_: SQLiteTransaction, result: SQLiteResultSet) => {
                     const rows: any[] = [];
                     for (let i = 0; i < result.rows.length; i++) {
                       rows.push(result.rows.item(i));
                     }
 
                     execResolve({
-                      insertId: result.insertId || undefined,
+                      insertId: result.insertId ?? undefined,
                       rowsAffected: result.rowsAffected,
                       rows
                     });
                   },
-                  (_, error) => {
+                  (_: SQLiteTransaction, error: Error) => {
                     execReject(error);
                     return false;
                   }
@@ -378,14 +383,14 @@ export class DatabaseManager {
                 tx.executeSql(
                   sql,
                   params,
-                  (_, result) => {
+                  (_: SQLiteTransaction, result: SQLiteResultSet) => {
                     const rows: any[] = [];
                     for (let i = 0; i < result.rows.length; i++) {
                       rows.push(result.rows.item(i));
                     }
                     queryResolve(rows);
                   },
-                  (_, error) => {
+                  (_: SQLiteTransaction, error: Error) => {
                     queryReject(error);
                     return false;
                   }

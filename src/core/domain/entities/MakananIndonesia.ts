@@ -24,7 +24,8 @@ export enum CaraMasak {
   TIM = 'tim',
   SAUTE = 'saute',
   DANDANG = 'dandang',
-  PANGGANG = 'panggang'
+  PANGGANG = 'panggang',
+  TUMIS = 'tumis'
 }
 
 export enum TingkatKepopuleran {
@@ -88,7 +89,7 @@ export class MakananIndonesia {
     public isVegetarian: boolean,
     public isVegan: boolean,
     public alergen: string[],
-    popularitas: TingkatKepopuleran,
+    public popularitas: TingkatKepopuleran,
     public ketersediaan: 'seluruh_indonesia' | 'beberapa_wilayah' | 'jarang_tersedia',
     public musimanHijau: boolean,
     public perkiraanHarga: {
@@ -96,7 +97,7 @@ export class MakananIndonesia {
       maksimal: number;
       mataUang: number;
     },
-    public lastUpdated: Date,
+    public lastUpdated: Date = new Date(),
     public createdAt: Date = new Date(),
     public updatedAt: Date = new Date()
   ) {}
@@ -130,7 +131,7 @@ export class MakananIndonesia {
   isSehatUntukPengguna(penggunaAlergi: string[]): boolean {
     return !this.alergen.some(alergen =>
       penggunaAlergi.some(userAlergen =>
-        this.alergen.toLowerCase().includes(userAlergen.toLowerCase())
+        alergen.toLowerCase().includes(userAlergen.toLowerCase())
       )
     );
   }
@@ -141,12 +142,12 @@ export class MakananIndonesia {
     }
 
     return this.daerah.provinsi.includes(provinsi) ||
-           (kota && this.daerah.kota.includes(kota));
+           (!!kota && this.daerah.kota.includes(kota));
   }
 
   isTersediaDiMusim(musiman: 'hijau' | 'kemarau' | 'hujan' | 'penghujan'): boolean {
     if (this.musimanHijau && musiman === 'hijau') return false;
-    return this.musiman === musiman;
+    return this.daerah.musiman.includes(musiman);
   }
 
   isMakananKhasRamadan(): boolean {
@@ -181,44 +182,48 @@ export class MakananIndonesia {
   dapatDimakanSelamaDiet(tipeDiet: string): boolean {
     switch (tipeDiet.toLowerCase()) {
       case 'vegetarian':
-        return this.isVegetarian;
+        return this.isVegetarianComputed;
       case 'vegan':
-        return this.isVegan;
+        return this.isVeganComputed;
       case 'paleo':
-        return this.isPaleoFriendly;
+        return this.isPaleoFriendly();
       case 'keto':
-        return this.isKetoFriendly;
+        return this.isKetoFriendly();
       default:
         return true; // 'none' diet allows all
     }
   }
 
+  dapatDimakanSebagai(dietType: string): boolean {
+    return this.dapatDimakanSelamaDiet(dietType);
+  }
+
   // Helper methods
-  private get isVegetarian(): boolean {
-    const bahanHewani = this.informasiBahan.filter(b =>
-      bahan.kategori === 'protein_hewani'
+  private get isVegetarianComputed(): boolean {
+    const bahanHewani = this.informasiBahan.filter(item =>
+      item.kategori === 'protein_hewani'
     );
     return bahanHewani.length === 0 && this.isVegetarian;
   }
 
-  private get isVegan(): boolean {
-    const bahanHewani = this.informasiBahan.filter(b =>
-      bahan.kategori === 'protein_hewani'
+  private get isVeganComputed(): boolean {
+    const bahanHewani = this.informasiBahan.filter(item =>
+      item.kategori === 'protein_hewani'
     );
-    const bahanHewaniLainnya = this.informasiBahan.filter(b =>
-      bahan.kategori === 'susu' || bahan.kategori === 'telur'
+    const bahanHewaniLainnya = this.informasiBahan.filter(item =>
+      item.kategori === 'susu' || item.kategori === 'telur'
     );
     return bahanHewani.length === 0 && bahanHewaniLainnya.length === 0;
   }
 
   private isPaleoFriendly(): boolean {
     const tidakPaleo = ['nasi', 'roti', 'gandum', 'kentang'];
-    const bahanPaleo = this.informasiBahan.map(b => bahan.nama.toLowerCase());
+    const bahanPaleo = this.informasiBahan.map(b => b.nama.toLowerCase());
 
     return !this.nama.toLowerCase().includes('gula') &&
            !tidakPaleo.some(nonPaleo =>
-             bahanPaleo.some(bahanPalem =>
-               this.nama.toLowerCase().includes(bahanPalem)
+             bahanPaleo.some(bahanPaleoItem =>
+               bahanPaleoItem.includes(nonPaleo)
              )
            );
   }

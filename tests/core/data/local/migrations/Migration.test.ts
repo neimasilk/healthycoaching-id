@@ -3,11 +3,11 @@
  * Location: src/core/data/local/migrations/__tests__/Migration.test.ts
  */
 
-import { Migration, MigrationManager } from '../Migration';
-import { DatabaseManager } from '../../database/DatabaseManager';
+import { Migration, MigrationManager } from '../../../src/core/data/local/migrations/Migration';
+import { DatabaseManager } from '../../../src/core/data/local/database/DatabaseManager';
 
 // Mock DatabaseManager
-jest.mock('../../database/DatabaseManager');
+jest.mock('../../../src/core/data/local/database/DatabaseManager');
 
 describe('Migration System', () => {
   let migrationManager: MigrationManager;

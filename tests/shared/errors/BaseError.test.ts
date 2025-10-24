@@ -12,8 +12,8 @@ import {
   NotFoundError,
   PermissionError,
   ConfigurationError
-} from '../BaseError';
-import { generateCorrelationId } from '../../utils/correlationId';
+} from '../../../src/shared/errors/BaseError';
+import { generateCorrelationId } from '../../../src/shared/utils/correlationId';
 
 describe('BaseError', () => {
   describe('Constructor', () => {

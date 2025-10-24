@@ -100,6 +100,9 @@ export class User {
 
   getBMI(): number {
     const heightInMeters = this.profile.tinggiBadan / 100;
+    if (heightInMeters <= 0) {
+      throw new Error('Height must be greater than 0');
+    }
     return this.profile.beratBadan / (heightInMeters * heightInMeters);
   }
 
@@ -127,7 +130,7 @@ export class User {
   // Indonesian context methods
   isPuasa(): boolean {
     // Check if user has puasa preference active
-    return this.profile.preferensi.tipeDiet === 'none'; // Simplified for now
+    return this.profile.preferensi.preferensiDiet.tipe === 'none'; // Simplified for now
   }
 
   needsHalalFood(): boolean {

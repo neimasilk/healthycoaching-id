@@ -3,8 +3,7 @@
  * Location: src/core/data/local/database/__tests__/DatabaseManager.test.ts
  */
 
-import { DatabaseManager, DatabaseInitializationError, DatabaseQueryError } from '../DatabaseManager';
-import { generateCorrelationId } from '../../../../shared/utils/correlationId';
+import { DatabaseManager, DatabaseInitializationError, DatabaseQueryError } from '@/core/data/local/database/DatabaseManager';
 
 // Mock react-native-sqlite-storage
 jest.mock('react-native-sqlite-storage', () => ({
@@ -107,6 +106,7 @@ describe('DatabaseManager', () => {
       });
 
       await dbManager.initialize();
+      mockDb.executeSql.mockClear();
     });
 
     it('should execute SELECT query successfully', async () => {
@@ -163,6 +163,7 @@ describe('DatabaseManager', () => {
       });
 
       await dbManager.initialize();
+      mockDb.executeSql.mockClear();
     });
 
     it('should execute INSERT query successfully', async () => {
@@ -198,7 +199,23 @@ describe('DatabaseManager', () => {
 
   describe('transaction', () => {
     beforeEach(async () => {
+      mockDb.executeSql.mockImplementation((sql, params, success) => {
+        success(null, { insertId: null, rowsAffected: 0, rows: [] });
+        return { test: true };
+      });
+
+      mockDb.transaction.mockImplementation((callback) => {
+        const mockTx = {
+          executeSql: jest.fn().mockImplementation((sql, params, success) => {
+            success(null, { insertId: null, rowsAffected: 0, rows: [] });
+          })
+        };
+        callback(mockTx);
+      });
+
       await dbManager.initialize();
+      mockDb.executeSql.mockClear();
+      mockDb.transaction.mockClear();
     });
 
     it('should execute transaction successfully', async () => {
@@ -261,6 +278,7 @@ describe('DatabaseManager', () => {
       });
 
       await dbManager.initialize();
+      mockDb.executeSql.mockClear();
     });
 
     it('should return database statistics', async () => {
@@ -279,7 +297,12 @@ describe('DatabaseManager', () => {
     });
 
     it('should handle errors in stats calculation gracefully', async () => {
-      mockDb.executeSql.mockRejectedValue(new Error('Stats error'));
+      mockDb.executeSql.mockImplementation((sql, params, success, error) => {
+        if (error) {
+          error(null, new Error('Stats error'));
+        }
+        return { test: true };
+      });
 
       const stats = await dbManager.getStats();
 

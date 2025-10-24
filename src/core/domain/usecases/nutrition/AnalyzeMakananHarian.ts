@@ -17,6 +17,7 @@ export interface MakananLog {
   porsi: string;
   kalori: number;
   waktuMakan: Date;
+  nutrisi?: Partial<NutrisiHarian>;
 }
 
 export interface NutrisiHarian {
@@ -75,7 +76,7 @@ export class AnalyzeMakananHarian {
     const targetKalori = await this.nutrisiAnalyzer.getKaloriTarget(user);
 
     // 4. Determine status
-    const status = this.determineStatus(totalNutrisi.kalori, targetKalori);
+    const status = this.determineStatus(totalNutrisi.totalKalori, targetKalori);
 
     // 5. Generate alerts
     const alerts = await this.generateAlerts(user, totalNutrisi, status);
@@ -88,9 +89,9 @@ export class AnalyzeMakananHarian {
 
     return {
       tanggal: request.tanggal,
-      totalKalori: totalNutrisi.kalori,
+      totalKalori: totalNutrisi.totalKalori,
       targetKalori,
-      persentaseTarget: Math.round((totalNutrisi.kalori / targetKalori) * 100),
+      persentaseTarget: Math.round((totalNutrisi.totalKalori / targetKalori) * 100),
       nutrisiRataRata: totalNutrisi,
       makananDimakan: makananHariIni,
       status,
@@ -100,22 +101,60 @@ export class AnalyzeMakananHarian {
   }
 
   private async getMakananHariIni(userId: string, tanggal: Date): Promise<MakananLog[]> {
-    // Implementation would retrieve food logs for specific date
-    // This is shared across features, so centralized here
-    return []; // Placeholder
+    if (!this.makananRepo) {
+      return [];
+    }
+
+    const startOfDay = new Date(tanggal);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(tanggal);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    if (typeof this.makananRepo.getLogsByDate === 'function') {
+      return this.makananRepo.getLogsByDate(userId, startOfDay, endOfDay);
+    }
+
+    if (typeof this.makananRepo.findByUserAndRange === 'function') {
+      return this.makananRepo.findByUserAndRange(userId, startOfDay, endOfDay);
+    }
+
+    if (typeof this.makananRepo.list === 'function') {
+      const allLogs = await this.makananRepo.list(userId);
+      return Array.isArray(allLogs)
+        ? allLogs.filter(
+            (log: MakananLog) =>
+              new Date(log.waktuMakan).getTime() >= startOfDay.getTime() &&
+              new Date(log.waktuMakan).getTime() <= endOfDay.getTime()
+          )
+        : [];
+    }
+
+    return [];
   }
 
-  private calculateTotalNutrisi(makananLog: MakananLog[]): Promise<NutrisiHarian> {
-    // Sum up all nutrition from food logs
-    return {
-      totalKalori: 0,
-      protein: 0,
-      karbohidrat: 0,
-      lemak: 0,
-      serat: 0,
-      garam: 0,
-      gula: 0
-    }; // Placeholder
+  private async calculateTotalNutrisi(makananLog: MakananLog[]): Promise<NutrisiHarian> {
+    return makananLog.reduce<NutrisiHarian>(
+      (acc, log) => {
+        acc.totalKalori += log.kalori;
+        acc.protein += log.nutrisi?.protein ?? 0;
+        acc.karbohidrat += log.nutrisi?.karbohidrat ?? 0;
+        acc.lemak += log.nutrisi?.lemak ?? 0;
+        acc.serat += log.nutrisi?.serat ?? 0;
+        acc.garam += log.nutrisi?.garam ?? 0;
+        acc.gula += log.nutrisi?.gula ?? 0;
+        return acc;
+      },
+      {
+        totalKalori: 0,
+        protein: 0,
+        karbohidrat: 0,
+        lemak: 0,
+        serat: 0,
+        garam: 0,
+        gula: 0,
+      }
+    );
   }
 
   private determineStatus(totalKalori: number, targetKalori: number): 'kurang' | 'pas' | 'lebih' {
@@ -184,17 +223,17 @@ export class AnalyzeMakananHarian {
     status: string
   ): Promise<AnalyzeMakananHarianResponse['rekomendasi']> {
     let rekomendasiMakanan: any[] = [];
-    let tips: string[] = [];
+    const tips: string[] = [];
 
     switch (status) {
       case 'kurang':
-        rekomendasiMakanan = await this.getRekomendasiMakananTinggiKalori(user.preferences.lokasi);
+        rekomendasiMakanan = await this.getRekomendasiMakananTinggiKalori(user.preferences?.lokasi);
         tips.push('Tambahkan porsi makanan secara bertahap');
         tips.push('Pilih makanan padat nutrisi seperti kacang-kacangan');
         break;
 
       case 'lebih':
-        rekomendasiMakanan = await this.getRekomendasiMakananRendahKalori(user.preferences.lokasi);
+        rekomendasiMakanan = await this.getRekomendasiMakananRendahKalori(user.preferences?.lokasi);
         tips.push('Kurangi porsi makanan secara bertahap');
         tips.push('Pilih sayuran segar sebagai pengganti karbohidrat');
         break;
@@ -207,7 +246,7 @@ export class AnalyzeMakananHarian {
 
     // Specific recommendations based on nutrition deficiencies
     if (nutrisi.serat < 25) {
-      const makananSeratTinggi = await this.getRekomendasiMakananTinggiSerat(user.preferences.lokasi);
+      const makananSeratTinggi = await this.getRekomendasiMakananTinggiSerat(user.preferences?.lokasi);
       rekomendasiMakanan = [...rekomendasiMakanan, ...makananSeratTinggi];
       tips.push('Tambahkan sayuran dan buah untuk meningkatkan asupan serat');
     }
@@ -220,15 +259,39 @@ export class AnalyzeMakananHarian {
   }
 
   // Private helper methods would be implemented here
-  private async getRekomendasiMakananTinggiKalori(lokasi: string): Promise<any[]> {
-    return []; // Placeholder
+  private async getRekomendasiMakananTinggiKalori(lokasi?: string): Promise<any[]> {
+    if (this.makananRepo?.getHighCalorieRecommendations) {
+      return this.makananRepo.getHighCalorieRecommendations(lokasi);
+    }
+
+    if (this.makananRepo?.findRecommendations) {
+      return this.makananRepo.findRecommendations({ type: 'high_calorie', lokasi });
+    }
+
+    return [];
   }
 
-  private async getRekomendasiMakananRendahKalori(lokasi: string): Promise<any[]> {
-    return []; // Placeholder
+  private async getRekomendasiMakananRendahKalori(lokasi?: string): Promise<any[]> {
+    if (this.makananRepo?.getLowCalorieRecommendations) {
+      return this.makananRepo.getLowCalorieRecommendations(lokasi);
+    }
+
+    if (this.makananRepo?.findRecommendations) {
+      return this.makananRepo.findRecommendations({ type: 'low_calorie', lokasi });
+    }
+
+    return [];
   }
 
-  private async getRekomendasiMakananTinggiSerat(lokasi: string): Promise<any[]> {
-    return []; // Placeholder
+  private async getRekomendasiMakananTinggiSerat(lokasi?: string): Promise<any[]> {
+    if (this.makananRepo?.getHighFiberRecommendations) {
+      return this.makananRepo.getHighFiberRecommendations(lokasi);
+    }
+
+    if (this.makananRepo?.findRecommendations) {
+      return this.makananRepo.findRecommendations({ type: 'high_fiber', lokasi });
+    }
+
+    return [];
   }
 }

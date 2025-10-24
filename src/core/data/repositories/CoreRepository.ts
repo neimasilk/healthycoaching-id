@@ -166,7 +166,7 @@ export class RepositoryError extends BaseError {
     message: string,
     public readonly repository: string,
     public readonly operation: string,
-    public readonly entityId?: ID,
+    public readonly entityId?: string | number,
     correlationId?: string
   ) {
     super(message, 'REPOSITORY_ERROR', correlationId);
@@ -177,7 +177,7 @@ export class RepositoryError extends BaseError {
 export class EntityNotFoundError extends RepositoryError {
   constructor(
     entityName: string,
-    entityId: ID,
+    entityId: string | number,
     repository: string,
     correlationId?: string
   ) {
@@ -185,7 +185,7 @@ export class EntityNotFoundError extends RepositoryError {
       `${entityName} with ID ${entityId} not found`,
       repository,
       'findById',
-      entityId,
+      String(entityId),
       correlationId
     );
     this.name = 'EntityNotFoundError';
@@ -195,7 +195,7 @@ export class EntityNotFoundError extends RepositoryError {
 export class DuplicateEntityError extends RepositoryError {
   constructor(
     entityName: string,
-    entityId: ID,
+    entityId: string | number,
     repository: string,
     correlationId?: string
   ) {
@@ -203,7 +203,7 @@ export class DuplicateEntityError extends RepositoryError {
       `${entityName} with ID ${entityId} already exists`,
       repository,
       'create',
-      entityId,
+      String(entityId),
       correlationId
     );
     this.name = 'DuplicateEntityError';

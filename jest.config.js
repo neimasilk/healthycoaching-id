@@ -2,7 +2,7 @@ module.exports = {
   preset: 'react-native',
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-.*)/',
+    'node_modules/(?!(react-native|@react-native|react-native-.*|uuid)/)',
   ],
   testMatch: [
     '<rootDir>/tests/**/*.test.{js,jsx,ts,tsx}',
