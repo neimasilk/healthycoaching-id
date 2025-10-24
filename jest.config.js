@@ -29,7 +29,7 @@ module.exports = {
       statements: 95,
     },
   },
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@/core/(.*)$': '<rootDir>/src/core/$1',
     '^@/features/(.*)$': '<rootDir>/src/features/$1',
@@ -37,6 +37,5 @@ module.exports = {
     '^@/assets/(.*)$': '<rootDir>/src/assets/$1',
     '^@/types/(.*)$': '<rootDir>/src/types/$1',
   },
-  testEnvironment: 'jsdom',
   setupFiles: ['<rootDir>/tests/mockAsyncStorage.js'],
 };
