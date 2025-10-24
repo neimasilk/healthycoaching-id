@@ -151,10 +151,10 @@ describe('MakananIndonesia Entity', () => {
       expect(makanan.popularitas).toBe(TingkatKepopuleran.SANGAT_POPULER);
     });
 
-    it('should auto-set timestamps if not provided', () => {
+    it('should auto-set timestamps if not provided', async () => {
       // Arrange
       const beforeCreate = new Date();
-      sleep(10); // Small delay
+      await new Promise(resolve => setTimeout(resolve, 1)); // Small delay
       const afterCreate = new Date();
 
       // Act
@@ -350,9 +350,9 @@ describe('MakananIndonesia Entity', () => {
     });
 
     it('should check regional availability', () => {
-      expect(makanan.isTersediaDiLokasi('Jakarta', null)).toBe(true);
-      expect(makanan.isTersediaDiLokasi('Bandung', null)).toBe(true);
-      expect(makanan.isTersediaDiLokasi('Medan', null)).toBe(false);
+      expect(makanan.isTersediaDiLokasi('Jakarta')).toBe(true);
+      expect(makanan.isTersediaDiLokasi('Bandung')).toBe(true);
+      expect(makanan.isTersediaDiLokasi('Medan')).toBe(false);
     });
 
     it('should check Ramadan food', () => {
@@ -384,23 +384,17 @@ describe('MakananIndonesia Entity', () => {
     it('should identify vegetarian foods', () => {
       expect(makanan.dapatDimakanSebagai('vegetarian')).toBe(true);
 
-      const nonVegetarian = new MakananIndonesia(
-        'test-003',
-        'Rendang Padang',
-        [],
-        KategoriMakanan.LAUK_PAUK,
-        ['Sumatera Barat'],
-        [],
-        [{ nama: 'Daging', persentase: 100, kategori: 'protein_hewani' }],
-        [CaraMasak.BAKAR],
-        false,
-        false,
-        [],
-        TingkatKepopuleran.SANGAT_POPULER,
-        'beberapa_wilayah',
-        false,
-        { minimal: 15000, maksimal: 25000, mataUang: 20000 }
-      );
+      const nonVegetarian = createTestMakanan({
+        id: 'test-003',
+        nama: 'Rendang Padang',
+        kategori: KategoriMakanan.LAUK_PAUK,
+        isVegetarian: false,
+        informasiBahan: [{
+          nama: 'Daging',
+          persentase: 100,
+          kategori: 'protein_hewani'
+        }]
+      });
 
       expect(nonVegetarian.dapatDimakanSebagai('vegetarian')).toBe(false);
     });

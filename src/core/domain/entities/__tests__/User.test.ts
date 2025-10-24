@@ -77,11 +77,11 @@ describe('User Entity', () => {
       expect(user.updatedAt).toEqual(new Date('2023-01-01'));
     });
 
-    it('should auto-update updatedAt if not provided', () => {
+    it('should auto-update updatedAt if not provided', async () => {
       // Arrange
       const userProfile = createMockUserProfile();
       const beforeUpdate = new Date();
-      sleep(10); // Small delay
+      await new Promise(resolve => setTimeout(resolve, 1)); // Small delay
       const afterUpdate = new Date();
 
       // Act
@@ -97,11 +97,25 @@ describe('User Entity', () => {
     it('should calculate correct age', () => {
       // Arrange
       const userProfile = createMockUserProfile();
-      userProfile.tanggalLahir = new Date('1990-01-15'); // 34 years old as of 2024
+      userProfile.tanggalLahir = new Date('1990-01-15');
       const user = new User('user-123', 'test@example.com', userProfile, new Date(), new Date());
 
-      // Act
+      // Act - Mock Date constructor
+      const testDate = new Date('2024-06-01');
+      const originalDate = global.Date;
+      global.Date = class extends Date {
+        constructor(...args: any[]) {
+          if (args.length === 0) {
+            return testDate;
+          }
+          return new originalDate(...args);
+        }
+      } as any;
+
       const age = user.getUmur();
+
+      // Restore original Date
+      global.Date = originalDate;
 
       // Assert
       expect(age).toBe(34);
