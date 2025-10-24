@@ -180,6 +180,10 @@ npm run deploy:android:production   # Production
 - [🧪 Testing Strategy](./docs/TESTING_STRATEGY.md)
 - [🤖 Android Optimization](./docs/ANDROID_OPTIMIZATION.md)
 - [📦 Deployment Guide](./docs/ANDROID_DEPLOYMENT.md)
+- [🎯 Implementation Guide](./docs/IMPLEMENTATION_GUIDE.md)
+- [📊 Production Readiness](./docs/PRODUCTION_READINESS.md)
+- [📋 Project Summary](./docs/PROJECT_SUMMARY.md)
+- [🚀 Android Optimized Summary](./docs/FINAL_ANDROID_OPTIMIZED_SUMMARY.md)
 - [📚 Claude Developer Guide](./docs/CLAUDE.md)
 
 ## 🤝 Contributing
